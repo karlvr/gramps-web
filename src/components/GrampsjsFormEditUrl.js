@@ -23,7 +23,7 @@ class GrampsjsFormEditUrl extends GrampsjsObjectForm {
           .types="${this.types}"
           .typesLocale="${this.typesLocale}"
           .data="${this.data}"
-          value=${this.data?.type?.string || ''}
+          value=${this.data?.type ?? ''}
         >
         </grampsjs-form-select-type>
       </p>
