@@ -15,6 +15,7 @@ import '../components/GrampsjsPlaceBox.js'
 import '../components/GrampsjsPersonBox.js'
 import '../components/GrampsjsMapTileLayer.js'
 import {
+  eventTypeName,
   isDateBetweenYears,
   getGregorianYears,
   personProfileDisplayName,
@@ -57,8 +58,9 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
       _currentLayer: {type: String},
       _minYear: {type: Number},
       _hiddenOverlaysHandles: {type: Array},
-      _personPlaceHandles: {type: Array},
       _selectedPersonData: {type: Object},
+      _eventTypes: {type: Array},
+      _selectedEventTypes: {type: Array},
     }
   }
 
@@ -70,12 +72,15 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
     this._handlesHighlight = []
     this._dataLayers = []
     this._hiddenOverlaysHandles = []
-    this._personPlaceHandles = []
     this._selected = ''
     this._valueSearch = ''
     this._searchFilter = DEFAULT_SEARCH_FILTER
     this._selectedPerson = null
     this._selectedPersonData = null
+    this._eventTypes = []
+    this._selectedEventTypes = []
+    // Intentionally non-reactive: rebuilt on fetch, never rendered directly.
+    this._eventsByHandle = new Map()
     // Intentionally non-reactive: only read on filter-change events, never
     // needs to trigger a re-render on its own.
     this._activeSearchQuery = ''
@@ -164,6 +169,20 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
     )
   }
 
+  /** The selected person's events, restricted to the event type filter. */
+  get _personEvents() {
+    const events = this._selectedPersonData?.extended?.events ?? EMPTY_ARRAY
+    if (this._selectedEventTypes.length === 0) {
+      return events
+    }
+    const selected = new Set(this._selectedEventTypes)
+    return events.filter(event => selected.has(eventTypeName(event.type)))
+  }
+
+  get _personPlaceHandles() {
+    return this._personEvents.map(event => event.place).filter(Boolean)
+  }
+
   get _placesForMap() {
     const highlightedHandles = new Set(this._handlesHighlight)
     const toMapPlace = obj => ({
@@ -219,7 +238,7 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
         zoom="${zoom}"
         >${this._renderLayers()}
         <grampsjs-map-person-lines-layer
-          .events="${this._selectedPersonData?.extended?.events ?? EMPTY_ARRAY}"
+          .events="${this._personEvents}"
           .places="${this._selectedPersonData ? this._dataPlaces : EMPTY_ARRAY}"
         ></grampsjs-map-person-lines-layer>
         <grampsjs-map-places-layer
@@ -233,7 +252,11 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
         @mapsearch:selected="${this._handleSearchSelected}"
         @mapsearch:filter-change="${this._handleSearchFilterChange}"
         @searchbox:timechip-clear="${this._handleTimechipClear}"
+        @mapfilter:eventtype-toggle="${this._handleEventTypeToggle}"
+        @mapfilter:eventtype-clear="${this._handleEventTypeClear}"
         .appState="${this.appState}"
+        .eventTypes="${this._eventTypes}"
+        .selectedEventTypes="${this._selectedEventTypes}"
         year="${this._selectedPerson ? -1 : this._year}"
         yearSpan="${this._selectedPerson ? -1 : this._yearSpan}"
         value="${this._valueSearch}"
@@ -329,6 +352,19 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
     this._applyPlaceFilter()
   }
 
+  _handleEventTypeToggle(event) {
+    const {type} = event.detail
+    this._selectedEventTypes = this._selectedEventTypes.includes(type)
+      ? this._selectedEventTypes.filter(t => t !== type)
+      : [...this._selectedEventTypes, type]
+    this._applyPlaceFilter()
+  }
+
+  _handleEventTypeClear() {
+    this._selectedEventTypes = []
+    this._applyPlaceFilter()
+  }
+
   _handleSearchInput(event) {
     this._activeSearchQuery = event.detail.value
     this._fetchDataSearch(event.detail.value)
@@ -341,7 +377,6 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
     this._activeSearchQuery = ''
     this._searchFilter = DEFAULT_SEARCH_FILTER
     this._handlesHighlight = []
-    this._personPlaceHandles = []
     this._selectedPerson = null
     this._selectedPersonData = null
   }
@@ -371,7 +406,6 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
     this._valueSearch = object.name || object.display_name || ''
     this._selectedPerson = null
     this._selectedPersonData = null
-    this._personPlaceHandles = []
     this._handlesHighlight = []
   }
 
@@ -380,7 +414,6 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
     this._valueSearch = personProfileDisplayName(person.profile)
     this._selectedPerson = person
     this._selectedPersonData = null
-    this._personPlaceHandles = []
     this._searchbox?.showDetails()
     this._highlightPersonPlaces(person)
   }
@@ -395,18 +428,13 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
       return
     }
     if (this._selectedPerson?.handle !== person.handle) return
-    const extPerson = data.data
-    this._selectedPersonData = extPerson
-    const placeHandles = (extPerson.extended?.events || [])
-      .map(event => event.place)
-      .filter(Boolean)
-    this._personPlaceHandles = placeHandles
+    this._selectedPersonData = data.data
     this._handlesHighlight = []
-    this._fitPersonPlaces(placeHandles)
+    this._fitPersonPlaces()
   }
 
-  _fitPersonPlaces(handles) {
-    const handleSet = new Set(handles)
+  _fitPersonPlaces() {
+    const handleSet = new Set(this._personPlaceHandles)
     const places = this._dataPlaces.filter(
       p => handleSet.has(p.handle) && this._hasCoords(p)
     )
@@ -545,24 +573,27 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
   }
 
   _applyPlaceFilter() {
-    const filterFunction = place => {
-      if (this._year > 0 && this._yearSpan > 0) {
-        const placeEvents =
-          place?.backlinks?.event?.map(handle =>
-            this._dataEvents?.find(event => event.handle === handle)
-          ) ?? []
-        if (placeEvents.length === 0) return false
-        const yearMin = this._year - this._yearSpan
-        const yearMax = this._year + this._yearSpan
-        return placeEvents.some(event =>
-          isDateBetweenYears(event?.date, yearMin, yearMax)
-        )
-      }
-      return true
+    const filterByYear = this._year > 0 && this._yearSpan > 0
+    const filterByType = this._selectedEventTypes.length > 0
+    if (!filterByYear && !filterByType) {
+      this._filteredPlaces = [...this._dataPlaces]
+      return
     }
-    this._filteredPlaces = [
-      ...this._dataPlaces.filter(place => filterFunction(place)),
-    ]
+    const yearMin = this._year - this._yearSpan
+    const yearMax = this._year + this._yearSpan
+    const selectedTypes = new Set(this._selectedEventTypes)
+    const eventMatches = event => {
+      if (event === undefined) return false
+      if (filterByType && !selectedTypes.has(eventTypeName(event.type))) {
+        return false
+      }
+      return !filterByYear || isDateBetweenYears(event.date, yearMin, yearMax)
+    }
+    this._filteredPlaces = this._dataPlaces.filter(place =>
+      (place?.backlinks?.event ?? []).some(handle =>
+        eventMatches(this._eventsByHandle.get(handle))
+      )
+    )
   }
 
   firstUpdated() {
@@ -658,7 +689,7 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
       this._dataPlaces = data.data
       this._applyPlaceFilter()
       if (this._selectedPerson && this._personPlaceHandles.length) {
-        this._fitPersonPlaces(this._personPlaceHandles)
+        this._fitPersonPlaces()
       } else if (!this._handlesHighlight.length && !getMapViewport()) {
         const center = this._getMapCenter()
         this._mapEl?.jumpTo(center[0], center[1], 6)
@@ -671,18 +702,41 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
 
   async _fetchEvents() {
     const data = await this.appState.apiGet(
-      '/api/events/?keys=date,handle,place'
+      '/api/events/?keys=date,handle,place,type'
     )
     this.loading = false
     if ('data' in data) {
       this.error = false
       this._dataEvents = data.data.filter(event => event.place)
+      this._eventsByHandle = new Map(
+        this._dataEvents.map(event => [event.handle, event])
+      )
+      this._eventTypes = this._getEventTypes()
+      this._selectedEventTypes = this._selectedEventTypes.filter(type =>
+        this._eventTypes.includes(type)
+      )
       this._minYear = this._getMinYear()
       this._applyPlaceFilter()
     } else if ('error' in data) {
       this.error = true
       this._errorMessage = data.error
     }
+  }
+
+  /** The types among events that reference a place, most frequent first. */
+  _getEventTypes() {
+    const counts = new Map()
+    this._dataEvents.forEach(event => {
+      const type = eventTypeName(event.type)
+      if (type) {
+        counts.set(type, (counts.get(type) ?? 0) + 1)
+      }
+    })
+    return [...counts.entries()]
+      .sort(([typeA, countA], [typeB, countB]) =>
+        countA === countB ? typeA.localeCompare(typeB) : countB - countA
+      )
+      .map(([type]) => type)
   }
 
   _getMinYear() {

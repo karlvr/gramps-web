@@ -18,6 +18,7 @@ import {
   isValidRect,
   apiVersionAtLeast,
   linkUrls,
+  eventTypeName,
 } from '../../src/util.js'
 
 // Helpers
@@ -486,5 +487,40 @@ describe('linkUrls', () => {
     expect(anchors.length).to.equal(1)
     expect(anchors[0].getAttribute('href')).to.equal('https://a.org/x')
     expect(div.textContent).to.contain('now')
+  })
+})
+
+describe('eventTypeName', () => {
+  it('returns a plain string type unchanged', () => {
+    expect(eventTypeName('Birth')).to.equal('Birth')
+  })
+
+  it('resolves a built-in type from its numeric value', () => {
+    expect(
+      eventTypeName({_class: 'EventType', string: '', value: 12})
+    ).to.equal('Birth')
+    expect(
+      eventTypeName({_class: 'EventType', string: '', value: 42})
+    ).to.equal('Residence')
+  })
+
+  it('prefers the free-text string of a custom type', () => {
+    expect(
+      eventTypeName({_class: 'EventType', string: 'Apprenticeship', value: 0})
+    ).to.equal('Apprenticeship')
+  })
+
+  it('resolves the unknown type', () => {
+    expect(
+      eventTypeName({_class: 'EventType', string: '', value: -1})
+    ).to.equal('Unknown')
+  })
+
+  it('returns an empty string for an unresolvable type', () => {
+    expect(eventTypeName(undefined)).to.equal('')
+    expect(eventTypeName(null)).to.equal('')
+    expect(
+      eventTypeName({_class: 'EventType', string: '', value: 999})
+    ).to.equal('')
   })
 })

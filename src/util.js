@@ -337,6 +337,18 @@ export const eventTypeStrings = {
   45: 'Stillbirth',
 }
 
+/**
+ * Resolve the untranslated name of an event type, which may be a plain string
+ * or a Gramps type object. The result is an English key for `translate`, or the
+ * empty string if the type cannot be resolved.
+ */
+export function eventTypeName(type) {
+  if (typeof type === 'string') {
+    return type
+  }
+  return type?.string || eventTypeStrings[type?.value] || ''
+}
+
 export const noteTypeStrings = {
   '-1': 'Unknown',
   0: 'Custom',
@@ -378,12 +390,7 @@ export function objectDescription(type, obj, strings) {
       translate(strings, 'Family')}`
     case 'event':
       return html`${eventTitleFromProfile(obj.profile || {}, false) ||
-      translate(
-        strings,
-        typeof obj.type === 'string'
-          ? obj.type
-          : obj.type.string || eventTypeStrings[obj.type.value] || type
-      )}`
+      translate(strings, eventTypeName(obj.type) || type)}`
     case 'place':
       return html`${obj?.profile?.name ||
       obj?.name?.value ||
