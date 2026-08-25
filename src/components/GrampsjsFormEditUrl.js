@@ -22,7 +22,6 @@ class GrampsjsFormEditUrl extends GrampsjsObjectForm {
           ?loadingTypes=${this.loadingTypes}
           .types="${this.types}"
           .typesLocale="${this.typesLocale}"
-          .data="${this.data}"
           value=${this.data?.type ?? ''}
         >
         </grampsjs-form-select-type>
