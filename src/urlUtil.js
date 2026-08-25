@@ -60,7 +60,9 @@ export function fixUrl(path, type) {
   try {
     const url = new URL(path)
     return SAFE_PROTOCOLS.includes(url.protocol) ? String(url) : UNSAFE_HREF
-  } catch (error) {}
+  } catch {
+    // Not an absolute URL; fall through to heuristics below.
+  }
 
   if (type === 'FTP') {
     return `ftp://${path}`
