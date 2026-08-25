@@ -16,7 +16,7 @@ import {
 } from '@mdi/js'
 import './GrampsjsIcon.js'
 import './GrampsjsButtonToggle.js'
-import './GrampsjsMapEventTypeFilter.js'
+import './GrampsjsMapFilterPanel.js'
 import './GrampsjsTooltip.js'
 
 import {classMap} from 'lit/directives/class-map.js'
@@ -231,8 +231,8 @@ class GrampsjsMapSearchbox extends GrampsjsAppStateMixin(LitElement) {
     return {
       value: {type: String},
       data: {type: Array},
-      year: {type: Number},
-      yearSpan: {type: Number},
+      timeFilter: {type: Object},
+      timeFilterApplies: {type: Boolean},
       eventTypes: {type: Array},
       selectedEventTypes: {type: Array},
       _activeFilter: {type: String},
@@ -246,8 +246,8 @@ class GrampsjsMapSearchbox extends GrampsjsAppStateMixin(LitElement) {
     super()
     this.value = ''
     this.data = []
-    this.year = -1
-    this.yearSpan = -1
+    this.timeFilter = {year: 0, span: 0, active: false}
+    this.timeFilterApplies = true
     this.eventTypes = []
     this.selectedEventTypes = []
     this._activeFilter = DEFAULT_SEARCH_FILTER
@@ -275,7 +275,7 @@ class GrampsjsMapSearchbox extends GrampsjsAppStateMixin(LitElement) {
             @input="${this._debouncedHandleInput}"
             .value="${this.value}"
           />
-          ${this.eventTypes.length > 0 ? this._renderFilterButton() : ''}
+          ${this._renderFilterButton()}
           ${showClearButton
             ? html`
                 <md-icon-button @click="${this._handleClear}">
@@ -288,11 +288,12 @@ class GrampsjsMapSearchbox extends GrampsjsAppStateMixin(LitElement) {
         ${this._renderChips()}
         ${this._filterOpen
           ? html`
-              <grampsjs-map-event-type-filter
+              <grampsjs-map-filter-panel
+                .timeFilter="${this.timeFilter}"
                 .types="${this.eventTypes}"
                 .selected="${this.selectedEventTypes}"
                 .appState="${this.appState}"
-              ></grampsjs-map-event-type-filter>
+              ></grampsjs-map-filter-panel>
             `
           : ''}
 
@@ -347,8 +348,13 @@ class GrampsjsMapSearchbox extends GrampsjsAppStateMixin(LitElement) {
     `
   }
 
+  /** Whether the time filter is currently narrowing what the map shows. */
+  get _timeActive() {
+    return this.timeFilterApplies && this.timeFilter.active
+  }
+
   _renderFilterButton() {
-    const filterActive = this.selectedEventTypes.length > 0
+    const filterActive = this.selectedEventTypes.length > 0 || this._timeActive
     return html`
       <md-icon-button
         id="filter-button"
@@ -369,16 +375,15 @@ class GrampsjsMapSearchbox extends GrampsjsAppStateMixin(LitElement) {
   }
 
   _renderChips() {
-    const timeActive = this.year > 0 && this.yearSpan > 0
-    if (!timeActive && this.selectedEventTypes.length === 0) {
+    if (!this._timeActive && this.selectedEventTypes.length === 0) {
       return ''
     }
     return html`
       <div id="chips">
-        ${timeActive
+        ${this._timeActive
           ? html`
               <button class="chip active" @click="${this._handleTimechipClear}">
-                ${this.year} &pm;${this.yearSpan}
+                ${this.timeFilter.year} &pm;${this.timeFilter.span}
                 <span class="chip-close">&times;</span>
               </button>
             `

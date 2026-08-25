@@ -6,11 +6,20 @@ import {sharedStyles} from '../SharedStyles.js'
 import {GrampsjsAppStateMixin} from '../mixins/GrampsjsAppStateMixin.js'
 import {fireEvent} from '../util.js'
 
+/**
+ * A chip that toggles selection, reporting the change rather than acting on it.
+ * A chip given no icon shows no leading mark: the fill conveys selection.
+ */
 export class GrampsjsButtonToggle extends GrampsjsAppStateMixin(LitElement) {
   static get styles() {
     return [
       sharedStyles,
       css`
+        /* Takes the checkmark's slot without taking up room. */
+        .no-icon {
+          display: none;
+        }
+
         md-filter-chip {
           --md-filter-chip-label-text-size: 13px;
           --md-filter-chip-label-text-weight: 400;
@@ -83,7 +92,7 @@ export class GrampsjsButtonToggle extends GrampsjsAppStateMixin(LitElement) {
                 width="18"
               ></grampsjs-icon>
             `
-          : ''}
+          : html`<span slot="selected-icon" class="no-icon"></span>`}
       </md-filter-chip>
     `
   }
