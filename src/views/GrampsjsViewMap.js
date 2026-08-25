@@ -392,7 +392,8 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
   }
 
   _handleTimeSliderChange(event) {
-    this._updateTimeFilter({year: event.detail.year})
+    // Moving the slider says which years matter, so it turns the filter on.
+    this._updateTimeFilter({year: event.detail.year, active: true})
   }
 
   _handleTimeToggle(event) {
