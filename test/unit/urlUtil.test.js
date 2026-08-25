@@ -125,6 +125,59 @@ describe('fixUrl', () => {
     })
   })
 
+  describe('missing path', () => {
+    it('does not link an empty path', () => {
+      expect(fixUrl('')).to.equal('#')
+    })
+
+    it('does not link a path that is not a string', () => {
+      expect(fixUrl(undefined)).to.equal('#')
+      expect(fixUrl(null)).to.equal('#')
+      expect(fixUrl(42)).to.equal('#')
+    })
+  })
+
+  describe('unsafe schemes', () => {
+    it('does not link to a javascript URL', () => {
+      expect(fixUrl('javascript:alert(document.cookie)')).to.equal('#')
+    })
+
+    it('catches a javascript URL whatever its case', () => {
+      expect(fixUrl('JaVaScRiPt:alert(1)')).to.equal('#')
+    })
+
+    it('catches a javascript URL containing whitespace', () => {
+      expect(fixUrl('java\nscript:alert(1)')).to.equal('#')
+      expect(fixUrl('  javascript:alert(1)')).to.equal('#')
+    })
+
+    it('does not link to a data URL', () => {
+      expect(fixUrl('data:text/html,<script>alert(1)</script>')).to.equal('#')
+    })
+
+    it('does not link to a vbscript URL', () => {
+      expect(fixUrl('vbscript:msgbox(1)')).to.equal('#')
+    })
+
+    it('does not link to a blob or file URL', () => {
+      expect(fixUrl('blob:https://example.com/uuid')).to.equal('#')
+      expect(fixUrl('file:///etc/passwd')).to.equal('#')
+    })
+
+    it('rejects an unsafe scheme whatever the type', () => {
+      expect(fixUrl('javascript:alert(1)', 'FTP')).to.equal('#')
+    })
+
+    it('allows the schemes the app itself produces', () => {
+      expect(fixUrl('ftps://example.com/pub')).to.equal(
+        'ftps://example.com/pub'
+      )
+      expect(fixUrl('sftp://example.com/pub')).to.equal(
+        'sftp://example.com/pub'
+      )
+    })
+  })
+
   describe('missing type', () => {
     it('treats an undefined type as not FTP', () => {
       expect(fixUrl('ftp.example.com')).to.equal('https://ftp.example.com')

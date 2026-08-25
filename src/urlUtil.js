@@ -4,6 +4,19 @@ Gramps URL records, which may hold anything from a full URL to a bare host
 name, an email address, or a phone number.
 */
 
+// Schemes that are safe to use in a link's href.
+const SAFE_PROTOCOLS = [
+  'http:',
+  'https:',
+  'ftp:',
+  'ftps:',
+  'sftp:',
+  'mailto:',
+  'tel:',
+]
+
+const UNSAFE_HREF = '#'
+
 function isValidEmail(email) {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return re.test(email)
@@ -37,11 +50,16 @@ function parsePhoneNumber(input) {
  *
  * @param {string} path the path as entered by the user
  * @param {string} [type] the Gramps URL type, if available, e.g. `FTP`
- * @returns {string} the href
+ * @returns {string} the href, which is always safe to use in a link
  */
 export function fixUrl(path, type) {
+  if (typeof path !== 'string' || !path) {
+    return UNSAFE_HREF
+  }
+
   try {
-    return String(new URL(path))
+    const url = new URL(path)
+    return SAFE_PROTOCOLS.includes(url.protocol) ? String(url) : UNSAFE_HREF
   } catch (error) {}
 
   if (type === 'FTP') {
