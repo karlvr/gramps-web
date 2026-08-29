@@ -59,6 +59,7 @@ import '@material/web/dialog/dialog.js'
 import {sharedStyles} from './SharedStyles.js'
 import {applyScheme, DEFAULT_PRIMARY, DEFAULT_SECONDARY} from './theme.js'
 import {handleOIDCCallback, handleOIDCComplete} from './oidc.js'
+import {EMBED_PAGE, findEmbeddedPage} from './embeddedPages.js'
 
 const BASE_DIR = ''
 
@@ -1051,6 +1052,16 @@ export class GrampsJs extends LitElement {
       'Gramps Web'
     if (OBJECT_PAGES.has(page) && pageId) {
       document.title = `${pageId} · ${suffix}`
+      return
+    }
+    if (page === EMBED_PAGE) {
+      const embeddedPage = findEmbeddedPage(
+        this.appState.frontendConfig,
+        pageId
+      )
+      document.title = embeddedPage
+        ? `${embeddedPage.title} · ${suffix}`
+        : suffix
       return
     }
     const pageTitle = PAGE_TITLES[page]

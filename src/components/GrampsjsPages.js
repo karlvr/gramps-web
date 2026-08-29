@@ -60,6 +60,8 @@ import '../views/GrampsjsViewNewTask.js'
 import '../views/GrampsjsViewNewBlogPost.js'
 import '../views/GrampsjsViewHelp.js'
 import '../views/GrampsjsViewTimeline.js'
+import '../views/GrampsjsViewEmbed.js'
+import {EMBED_PAGE, getEmbeddedPages} from '../embeddedPages.js'
 
 class GrampsjsPages extends GrampsjsAppStateMixin(LitElement) {
   static get styles() {
@@ -418,6 +420,17 @@ class GrampsjsPages extends GrampsjsAppStateMixin(LitElement) {
         ?active=${this.appState.path.page === 'timeline'}
         .appState="${this.appState}"
       ></grampsjs-view-timeline>
+      ${getEmbeddedPages(this.appState.frontendConfig).map(
+        page => html`
+          <grampsjs-view-embed
+            class="page"
+            ?active=${this.appState.path.page === EMBED_PAGE &&
+            this.appState.path.pageId === page.id}
+            .embeddedPage="${page}"
+            .appState="${this.appState}"
+          ></grampsjs-view-embed>
+        `
+      )}
     `
   }
 }
