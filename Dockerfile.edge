@@ -1,0 +1,6 @@
+# Combined edge image: the patched frontend served by the patched backend.
+# WEBAPI_IMAGE is overridden by the edge workflow so it points at this owner's
+# gramps-web-api:edge build rather than upstream.
+ARG WEBAPI_IMAGE=ghcr.io/karlvr/gramps-web-api:edge
+FROM ${WEBAPI_IMAGE}
+COPY dist /app/static
