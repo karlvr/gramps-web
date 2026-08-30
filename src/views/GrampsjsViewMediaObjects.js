@@ -2,7 +2,7 @@
 Medias list view
 */
 
-import {html, css} from 'lit'
+import {html, css, nothing} from 'lit'
 import {
   mdiViewList,
   mdiViewGrid,
@@ -399,6 +399,7 @@ export class GrampsjsViewMediaObjects extends GrampsjsViewObjectsBase {
     return html`
       <div
         class="tile"
+        aria-label="${row.desc || row.gramps_id || nothing}"
         role="button"
         tabindex="0"
         @click="${() => this._handleImageClick(row)}"
@@ -416,6 +417,12 @@ export class GrampsjsViewMediaObjects extends GrampsjsViewObjectsBase {
           .appState="${this.appState}"
           .data="${row}"
         ></grampsjs-object-indicators>
+        ${row.desc
+          ? html`<grampsjs-tooltip
+              content="${row.desc}"
+              .appState="${this.appState}"
+            ></grampsjs-tooltip>`
+          : ''}
       </div>
     `
   }
