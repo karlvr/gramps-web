@@ -1,4 +1,4 @@
-import {LitElement, css, html} from 'lit'
+import {LitElement, css, html, nothing} from 'lit'
 import {
   mdiArrowLeft,
   mdiArrowRight,
@@ -10,11 +10,12 @@ import {
 import {sharedStyles} from '../SharedStyles.js'
 import './GrampsjsImg.js'
 import './GrampsjsIcon.js'
+import './GrampsjsObjectIndicators.js'
 import '../views/GrampsjsViewMediaLightbox.js'
 import './GrampsjsFormMediaRef.js'
 import './GrampsjsFormNewMedia.js'
 import '@material/web/iconbutton/icon-button.js'
-import {fireEvent} from '../util.js'
+import {clickKeyHandler, fireEvent} from '../util.js'
 import {GrampsjsAppStateMixin} from '../mixins/GrampsjsAppStateMixin.js'
 
 export class GrampsjsGallery extends GrampsjsAppStateMixin(LitElement) {
@@ -45,12 +46,28 @@ export class GrampsjsGallery extends GrampsjsAppStateMixin(LitElement) {
           inset: 0;
         }
 
+        .tile:focus-visible {
+          outline: 2px solid var(--mdc-theme-primary);
+          outline-offset: 2px;
+        }
+
         .tile-overlay {
           position: absolute;
           bottom: 4px;
           right: 4px;
           display: flex;
           gap: 2px;
+        }
+
+        .tile-indicators {
+          position: absolute;
+          bottom: 4px;
+          left: 4px;
+          padding: 2px 5px;
+          border-radius: 10px;
+          background-color: rgba(255, 255, 255, 0.5);
+          color: rgba(0, 0, 0, 0.75);
+          --grampsjs-object-indicators-size: 14px;
         }
 
         .tile-overlay md-icon-button {
@@ -136,7 +153,13 @@ export class GrampsjsGallery extends GrampsjsAppStateMixin(LitElement) {
     const {handle, mime, checksum} = this.media[i]
     const {rect} = this.mediaRef[i]
     return html`
-      <div class="tile">
+      <div
+        class="tile"
+        role="${this.edit ? nothing : 'button'}"
+        tabindex="${this.edit ? nothing : '0'}"
+        @click="${() => this._handleClick(i)}"
+        @keydown="${clickKeyHandler}"
+      >
         <grampsjs-img
           square
           cover
@@ -145,8 +168,12 @@ export class GrampsjsGallery extends GrampsjsAppStateMixin(LitElement) {
           .rect="${rect || []}"
           mime="${mime}"
           checksum="${checksum}"
-          @click="${() => this._handleClick(i)}"
         ></grampsjs-img>
+        <grampsjs-object-indicators
+          class="tile-indicators"
+          .appState="${this.appState}"
+          .data="${this.media[i]}"
+        ></grampsjs-object-indicators>
         ${this.edit
           ? html`
               <div class="tile-overlay">

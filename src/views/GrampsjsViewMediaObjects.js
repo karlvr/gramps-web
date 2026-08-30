@@ -25,6 +25,7 @@ import '../components/GrampsjsFilterPrivate.js'
 import '../components/GrampsjsFilterText.js'
 import '../components/GrampsjsFilterObjectType.js'
 import '../components/GrampsjsIcon.js'
+import '../components/GrampsjsObjectIndicators.js'
 import '../components/GrampsjsTooltip.js'
 import '@material/web/select/filled-select'
 import '@material/web/select/select-option'
@@ -83,12 +84,35 @@ export class GrampsjsViewMediaObjects extends GrampsjsViewObjectsBase {
           border-radius: 6px;
           overflow: hidden;
           aspect-ratio: 1;
+          position: relative;
+        }
+
+        .tile-indicators {
+          position: absolute;
+          bottom: 4px;
+          left: 4px;
+          padding: 2px 5px;
+          border-radius: 10px;
+          background-color: rgba(255, 255, 255, 0.5);
+          color: rgba(0, 0, 0, 0.75);
+          --grampsjs-object-indicators-size: 14px;
+        }
+
+        .media-list-indicators {
+          margin-top: 4px;
+          color: var(--grampsjs-body-font-color-60);
+          --grampsjs-object-indicators-size: 16px;
         }
 
         .tile grampsjs-img {
           display: block;
           width: 100%;
           height: 100%;
+        }
+
+        .tile:focus-visible {
+          outline: 2px solid var(--mdc-theme-primary);
+          outline-offset: 2px;
         }
 
         /* List view */
@@ -184,7 +208,7 @@ export class GrampsjsViewMediaObjects extends GrampsjsViewObjectsBase {
 
   // eslint-disable-next-line class-methods-use-this
   get _fetchUrl() {
-    return '/api/media/?keys=gramps_id,mime,desc,change,handle,checksum,extended&extend=tag_list'
+    return '/api/media/?keys=gramps_id,mime,desc,change,handle,checksum,note_list,extended&extend=tag_list'
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -314,6 +338,11 @@ export class GrampsjsViewMediaObjects extends GrampsjsViewObjectsBase {
           <div class="media-list-meta">
             ${prettyTimeDiffTimestamp(row.change, this.appState.i18n.lang)}
           </div>
+          <grampsjs-object-indicators
+            class="media-list-indicators"
+            .appState="${this.appState}"
+            .data="${row}"
+          ></grampsjs-object-indicators>
           ${row.extended?.tags?.length
             ? html`<div class="tags-row">
                 ${row.extended.tags.map(
@@ -388,15 +417,25 @@ export class GrampsjsViewMediaObjects extends GrampsjsViewObjectsBase {
       return ''
     }
     return html`
-      <div class="tile">
+      <div
+        class="tile"
+        role="button"
+        tabindex="0"
+        @click="${() => this._handleImageClick(row)}"
+        @keydown="${clickKeyHandler}"
+      >
         <grampsjs-img
           handle="${row.handle}"
           size="300"
           square
           mime="${row.mime}"
           checksum="${row.checksum}"
-          @click="${() => this._handleImageClick(row)}"
         ></grampsjs-img>
+        <grampsjs-object-indicators
+          class="tile-indicators"
+          .appState="${this.appState}"
+          .data="${row}"
+        ></grampsjs-object-indicators>
       </div>
     `
   }
