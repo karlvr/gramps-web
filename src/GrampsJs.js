@@ -35,6 +35,7 @@ import {
 } from './util.js'
 
 import {appStateUpdatePermissions, getInitialAppState} from './appState.js'
+import {ScrollMemory, scrollingAncestor} from './scrollMemory.js'
 import {
   LOADING_STATE_INITIAL,
   LOADING_STATE_UNAUTHORIZED,
@@ -157,6 +158,16 @@ export class GrampsJs extends LitElement {
     this._semanticIndexStale = false
     this._drawerWasOpen = false
     this._metadataConfirmed = false
+    this._scroll = new ScrollMemory(() => this._scroller())
+  }
+
+  /**
+   * The box the application's content scrolls in.
+   * @returns {Element | null}
+   */
+  _scroller() {
+    const content = this.renderRoot?.querySelector('main')
+    return content ? scrollingAncestor(content) : null
   }
 
   get canUseChat() {
@@ -797,8 +808,11 @@ export class GrampsJs extends LitElement {
   }
 
   firstUpdated() {
-    installRouter(location =>
-      this._loadPage(decodeURIComponent(location.pathname))
+    installRouter((location, event) =>
+      this._loadPage(
+        decodeURIComponent(location.pathname),
+        event?.type === 'popstate'
+      )
     )
     installMediaQueryWatcher('(max-width: 991px)', matches => {
       if (matches && this.appState.screenSize !== 'small') {
@@ -1049,8 +1063,9 @@ export class GrampsJs extends LitElement {
     })
   }
 
-  _loadPage(path) {
+  _loadPage(path, returning = false) {
     this._disableEditMode()
+    this._scroll.leaving()
 
     if (path.includes('/oidc/callback')) {
       handleOIDCCallback(msg => this._showError(msg))
@@ -1085,6 +1100,8 @@ export class GrampsJs extends LitElement {
     if (this.appState.screenSize === 'small') {
       this._closeDrawer()
     }
+
+    this._scroll.arriving(path, returning)
   }
 
   _updateTitle() {
