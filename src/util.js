@@ -711,6 +711,23 @@ export function isValidRect(rect) {
   return normalizeRect(rect) !== null
 }
 
+/**
+ * Build a single-line plain-text excerpt of a list of note objects.
+ *
+ * The first note that has any text at all is used. Runs of whitespace are
+ * collapsed to single spaces so that the result can be shown on one line.
+ * Returns an empty string when there is no text to show.
+ */
+export function noteExcerpt(notes, maxLength = 300) {
+  const text = (notes || [])
+    .map(note => (note?.text?.string || '').replace(/\s+/g, ' ').trim())
+    .find(Boolean)
+  if (!text) {
+    return ''
+  }
+  return text.length > maxLength ? `${text.slice(0, maxLength).trim()}…` : text
+}
+
 export function clickKeyHandler(event) {
   if (event.code === 'Enter' || event.code === 'Space') {
     event.target.click()
