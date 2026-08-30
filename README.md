@@ -58,6 +58,8 @@ The documentation of Gramps Web is hosted at [www.grampsweb.org](https://www.gra
 - **[Contribute](https://www.grampsweb.org/contribute/contribute/):** Find out how you can support the project.
 - **[Get Help](https://www.grampsweb.org/help/help/):** Access support resources and FAQs.
 
+Deployers can add their own pages to the interface — framed external pages or custom-built modules — via `config.js`; see [CUSTOM_PAGES.md](CUSTOM_PAGES.md).
+
 
 ## Contribute
 

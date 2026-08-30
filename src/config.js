@@ -64,7 +64,8 @@
 //     The element is created once and kept while other pages are shown.
 //     Unlike a framed page, a custom page runs with the same access as
 //     Gramps Web itself, including the user's login session — only install
-//     modules you trust.
+//     modules you trust. See CUSTOM_PAGES.md in the source repository for a
+//     guide to building one.
 //
 // Map
 //
