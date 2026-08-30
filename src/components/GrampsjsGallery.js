@@ -11,6 +11,7 @@ import {sharedStyles} from '../SharedStyles.js'
 import './GrampsjsImg.js'
 import './GrampsjsIcon.js'
 import './GrampsjsObjectIndicators.js'
+import './GrampsjsTooltip.js'
 import '../views/GrampsjsViewMediaLightbox.js'
 import './GrampsjsFormMediaRef.js'
 import './GrampsjsFormNewMedia.js'
@@ -150,11 +151,12 @@ export class GrampsjsGallery extends GrampsjsAppStateMixin(LitElement) {
   }
 
   _renderThumbnail(i) {
-    const {handle, mime, checksum} = this.media[i]
+    const {handle, mime, checksum, desc, gramps_id: grampsId} = this.media[i]
     const {rect} = this.mediaRef[i]
     return html`
       <div
         class="tile"
+        aria-label="${desc || grampsId || nothing}"
         role="${this.edit ? nothing : 'button'}"
         tabindex="${this.edit ? nothing : '0'}"
         @click="${() => this._handleClick(i)}"
@@ -174,6 +176,12 @@ export class GrampsjsGallery extends GrampsjsAppStateMixin(LitElement) {
           .appState="${this.appState}"
           .data="${this.media[i]}"
         ></grampsjs-object-indicators>
+        ${desc
+          ? html`<grampsjs-tooltip
+              content="${desc}"
+              .appState="${this.appState}"
+            ></grampsjs-tooltip>`
+          : ''}
         ${this.edit
           ? html`
               <div class="tile-overlay">
