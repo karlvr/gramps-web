@@ -13,7 +13,7 @@ describe('getEmbeddedPages', () => {
     expect(getEmbeddedPages({embeddedPages: {id: 'x', url: 'y'}})).toEqual([])
   })
 
-  it('drops entries without an id or url', () => {
+  it('drops entries without an id, or without a url or module', () => {
     expect(
       getEmbeddedPages({
         embeddedPages: [
@@ -21,12 +21,26 @@ describe('getEmbeddedPages', () => {
           {id: 'b'},
           {id: '', url: 'https://c'},
           {id: 'd', url: ''},
+          {id: 'e', module: ''},
+          {id: 'f', module: 42},
           null,
           'string',
           {id: 'ok', url: 'https://ok'},
+          {id: 'ok2', module: '/plugins/ok2.js'},
         ],
       })
-    ).toEqual([{id: 'ok', title: 'ok', url: 'https://ok'}])
+    ).toEqual([
+      {id: 'ok', title: 'ok', url: 'https://ok'},
+      {id: 'ok2', title: 'ok2', module: '/plugins/ok2.js'},
+    ])
+  })
+
+  it('keeps both url and module when both are given', () => {
+    expect(
+      getEmbeddedPages({
+        embeddedPages: [{id: 'a', url: 'https://a', module: '/a.js'}],
+      })
+    ).toEqual([{id: 'a', title: 'a', url: 'https://a', module: '/a.js'}])
   })
 
   it('defaults the title to the id and passes optional fields through', () => {

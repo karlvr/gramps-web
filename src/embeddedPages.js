@@ -1,5 +1,8 @@
 /*
-Embedded pages: external web pages shown inside the Gramps Web interface.
+Embedded pages: additional pages shown inside the Gramps Web interface, each
+with its own link in the side navigation. A page is either an external web
+page (`url`, shown in a frame) or a custom page (`module`, a JavaScript module
+whose default export is a custom element class that is rendered in place).
 
 Deployers declare them in the runtime config (`window.grampsjsConfig.embeddedPages`).
 This module owns the shape of that declaration: it normalises raw config
@@ -11,17 +14,23 @@ directly so that every consumer agrees on defaults and validation.
 /** The route name under which embedded pages are shown (`/embed/<id>`). */
 export const EMBED_PAGE = 'embed'
 
+function isNonEmptyString(value) {
+  return typeof value === 'string' && value !== ''
+}
+
 /**
  * Normalise the raw `embeddedPages` config value into a list of well-formed
  * page descriptors.
  *
- * Entries without a string `id` and `url` are dropped; `title` defaults to
- * the id. `icon` (an SVG path in a 24×24 viewBox), `iconUrl`, `before` and
- * `after` are passed through when they are strings and omitted otherwise.
- * Duplicate ids keep the first occurrence.
+ * Entries without a string `id`, or without at least one of a string `url`
+ * or `module`, are dropped; `title` defaults to the id. `icon` (an SVG path in
+ * a 24×24 viewBox), `iconUrl`, `before` and `after` are passed through when
+ * they are strings and omitted otherwise. Duplicate ids keep the first
+ * occurrence. When both `url` and `module` are given, both are kept;
+ * consumers treat `module` as taking precedence.
  *
  * @param {object} frontendConfig The runtime config object (may be undefined).
- * @returns {Array<{id: string, title: string, url: string, icon?: string, iconUrl?: string, before?: string, after?: string}>}
+ * @returns {Array<{id: string, title: string, url?: string, module?: string, icon?: string, iconUrl?: string, before?: string, after?: string}>}
  */
 export function getEmbeddedPages(frontendConfig) {
   const raw = frontendConfig?.embeddedPages
@@ -36,18 +45,23 @@ export function getEmbeddedPages(frontendConfig) {
       typeof entry === 'object' &&
       typeof entry.id === 'string' &&
       entry.id !== '' &&
-      typeof entry.url === 'string' &&
-      entry.url !== '' &&
+      (isNonEmptyString(entry.url) || isNonEmptyString(entry.module)) &&
       !seen.has(entry.id)
     ) {
       seen.add(entry.id)
       const page = {
         id: entry.id,
         title: typeof entry.title === 'string' ? entry.title : entry.id,
-        url: entry.url,
       }
-      for (const key of ['icon', 'iconUrl', 'before', 'after']) {
-        if (typeof entry[key] === 'string' && entry[key] !== '') {
+      for (const key of [
+        'url',
+        'module',
+        'icon',
+        'iconUrl',
+        'before',
+        'after',
+      ]) {
+        if (isNonEmptyString(entry[key])) {
           page[key] = entry[key]
         }
       }

@@ -19,8 +19,10 @@
 //     Hide the DNA item in the side navigation and its keyboard shortcut.
 //
 //   embeddedPages: [...]
-//     External web pages shown inside the Gramps Web interface, each with its
-//     own link in the side navigation. Example:
+//     Additional pages shown inside the Gramps Web interface, each with its
+//     own link in the side navigation. A page is either an external web page
+//     (`url`, shown in a frame) or a custom page (`module`, see below).
+//     Example:
 //
 //     embeddedPages: [
 //       {
@@ -45,6 +47,24 @@
 //
 //     The embedded site must allow being framed by the Gramps Web origin
 //     (X-Frame-Options / Content-Security-Policy frame-ancestors).
+//
+//     A custom page is a JavaScript module served alongside this file (for
+//     example mounted at `/app/static/plugins/stats.js`) whose default export
+//     is a custom element class:
+//
+//     embeddedPages: [
+//       {id: 'stats', title: 'Statistics', module: '/plugins/stats.js'},
+//     ]
+//
+//     The element is rendered in the content area and receives two
+//     properties: `appState` (the Gramps Web app state, including
+//     `appState.apiGet(...)` and friends for authenticated API access, and
+//     `appState.i18n`, `permissions`, `settings`, `dbInfo`) and `subPage`
+//     (the route segment after the page id, so `/embed/stats/<subPage>`).
+//     The element is created once and kept while other pages are shown.
+//     Unlike a framed page, a custom page runs with the same access as
+//     Gramps Web itself, including the user's login session — only install
+//     modules you trust.
 //
 // Map
 //
