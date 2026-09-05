@@ -9,12 +9,15 @@ import {
   mdiChevronUp,
   mdiClose,
   mdiEarth,
+  mdiFilterVariant,
   mdiMagnify,
   mdiMapMarker,
   mdiMapMarkerOff,
 } from '@mdi/js'
 import './GrampsjsIcon.js'
 import './GrampsjsButtonToggle.js'
+import './GrampsjsMapFilterPanel.js'
+import './GrampsjsTooltip.js'
 
 import {classMap} from 'lit/directives/class-map.js'
 import {sharedStyles} from '../SharedStyles.js'
@@ -228,11 +231,14 @@ class GrampsjsMapSearchbox extends GrampsjsAppStateMixin(LitElement) {
     return {
       value: {type: String},
       data: {type: Array},
-      year: {type: Number},
-      yearSpan: {type: Number},
+      timeFilter: {type: Object},
+      timeFilterApplies: {type: Boolean},
+      eventTypes: {type: Array},
+      selectedEventTypes: {type: Array},
       _activeFilter: {type: String},
       _panelState: {type: String},
       _collapsed: {type: Boolean},
+      _filterOpen: {type: Boolean},
     }
   }
 
@@ -240,11 +246,14 @@ class GrampsjsMapSearchbox extends GrampsjsAppStateMixin(LitElement) {
     super()
     this.value = ''
     this.data = []
-    this.year = -1
-    this.yearSpan = -1
+    this.timeFilter = {year: 0, span: 0, active: false}
+    this.timeFilterApplies = true
+    this.eventTypes = []
+    this.selectedEventTypes = []
     this._activeFilter = DEFAULT_SEARCH_FILTER
     this._panelState = PANEL_EMPTY
     this._collapsed = false
+    this._filterOpen = false
     this._debouncedHandleInput = debounce(() => this._handleInput(), 500)
   }
 
@@ -266,6 +275,7 @@ class GrampsjsMapSearchbox extends GrampsjsAppStateMixin(LitElement) {
             @input="${this._debouncedHandleInput}"
             .value="${this.value}"
           />
+          ${this._renderFilterButton()}
           ${showClearButton
             ? html`
                 <md-icon-button @click="${this._handleClear}">
@@ -276,6 +286,16 @@ class GrampsjsMapSearchbox extends GrampsjsAppStateMixin(LitElement) {
         </div>
 
         ${this._renderChips()}
+        ${this._filterOpen
+          ? html`
+              <grampsjs-map-filter-panel
+                .timeFilter="${this.timeFilter}"
+                .types="${this.eventTypes}"
+                .selected="${this.selectedEventTypes}"
+                .appState="${this.appState}"
+              ></grampsjs-map-filter-panel>
+            `
+          : ''}
 
         <div
           id="panel"
@@ -328,17 +348,67 @@ class GrampsjsMapSearchbox extends GrampsjsAppStateMixin(LitElement) {
     `
   }
 
+  /** Whether the time filter is currently narrowing what the map shows. */
+  get _timeActive() {
+    return this.timeFilterApplies && this.timeFilter.active
+  }
+
+  _renderFilterButton() {
+    const filterActive = this.selectedEventTypes.length > 0 || this._timeActive
+    return html`
+      <md-icon-button
+        id="filter-button"
+        @click="${this._handleFilterClick}"
+        aria-label="${this._('Filter')}"
+      >
+        <grampsjs-tooltip for="filter-button" .appState="${this.appState}"
+          >${this._('Filter')}</grampsjs-tooltip
+        >
+        <grampsjs-icon
+          path="${mdiFilterVariant}"
+          color="${filterActive
+            ? 'var(--md-sys-color-primary)'
+            : 'var(--md-sys-color-on-surface-variant)'}"
+        ></grampsjs-icon>
+      </md-icon-button>
+    `
+  }
+
   _renderChips() {
-    const timeActive = this.year > 0 && this.yearSpan > 0
-    if (!timeActive) return ''
+    if (!this._timeActive && this.selectedEventTypes.length === 0) {
+      return ''
+    }
     return html`
       <div id="chips">
-        <button class="chip active" @click="${this._handleTimechipClear}">
-          ${this.year} &pm;${this.yearSpan}
-          <span class="chip-close">&times;</span>
-        </button>
+        ${this._timeActive
+          ? html`
+              <button class="chip active" @click="${this._handleTimechipClear}">
+                ${this.timeFilter.year} &pm;${this.timeFilter.span}
+                <span class="chip-close">&times;</span>
+              </button>
+            `
+          : ''}
+        ${this.selectedEventTypes.map(
+          type => html`
+            <button
+              class="chip active"
+              @click="${() => this._handleEventTypeChipClear(type)}"
+            >
+              ${this._(type)}
+              <span class="chip-close">&times;</span>
+            </button>
+          `
+        )}
       </div>
     `
+  }
+
+  _handleFilterClick() {
+    this._filterOpen = !this._filterOpen
+  }
+
+  _handleEventTypeChipClear(type) {
+    fireEvent(this, 'mapfilter:eventtype-toggle', {type})
   }
 
   _renderFilterPills() {
@@ -507,6 +577,8 @@ class GrampsjsMapSearchbox extends GrampsjsAppStateMixin(LitElement) {
   setResults(results) {
     this.data = results
     if (results.length > 0) this._collapsed = false
+    // Otherwise the results are pushed down the column, out of the viewport.
+    this._filterOpen = false
     this._panelState = PANEL_RESULTS
   }
 
@@ -520,6 +592,7 @@ class GrampsjsMapSearchbox extends GrampsjsAppStateMixin(LitElement) {
   }
 
   showDetails() {
+    this._filterOpen = false
     this._panelState = PANEL_DETAILS
   }
 

@@ -9,7 +9,7 @@ import {
   getName,
   translate,
   objectIconPath,
-  eventTypeStrings,
+  eventTypeName,
   noteTypeStrings,
 } from './util.js'
 import './components/GrampsjsObjectLink.js'
@@ -81,9 +81,8 @@ export function showObject(type, obj, strings) {
         ></grampsjs-icon>
         <a href="${BASE_DIR}/${type}/${obj.gramps_id}"
           >${eventTitleFromProfile(obj.profile || {}) ||
-          (typeof obj.type === 'string'
-            ? obj.type
-            : obj.type?.string || eventTypeStrings[obj.type?.value] || type)}
+          eventTypeName(obj.type) ||
+          type}
         </a>
       `
     case 'place':
