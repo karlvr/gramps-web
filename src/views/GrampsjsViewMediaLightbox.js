@@ -18,7 +18,7 @@ import '../components/GrampsjsRect.js'
 import '../components/GrampsjsTooltip.js'
 import '../components/GrampsjsIcon.js'
 import {getMediaUrl} from '../api.js'
-import {fireEvent, getNameFromProfile} from '../util.js'
+import {fireEvent, getNameFromProfile, noteExcerpt} from '../util.js'
 
 // Make sure to synchronize this with the CSS variable --grampsjs-lightbox-toolbar-height in GrampsjsLightbox.js
 const LIGHTBOX_TOOLBAR_HEIGHT = 70
@@ -116,6 +116,9 @@ export class GrampsjsViewMediaLightbox extends GrampsjsView {
             ? html`<span class="date">${this._data?.profile?.date}</span>`
             : ''}</span
         >
+        ${this._noteExcerpt
+          ? html`<div slot="excerpt">${this._noteExcerpt}</div>`
+          : ''}
         <span slot="button">
           <md-icon-button
             id="btn-toggle-rect"
@@ -165,6 +168,10 @@ export class GrampsjsViewMediaLightbox extends GrampsjsView {
         </span>
       </grampsjs-lightbox>
     `
+  }
+
+  get _noteExcerpt() {
+    return noteExcerpt(this._data?.extended?.notes)
   }
 
   open() {

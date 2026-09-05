@@ -15,29 +15,6 @@ class GrampsjsLightbox extends LitElement {
           );
         }
 
-        @media (max-width: 600px) {
-          :host {
-            --grampsjs-lightbox-toolbar-height: 96px;
-          }
-
-          #text-row {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          #description-container {
-            flex: 1;
-            font-size: 15px;
-            padding: 4px 12px 0;
-          }
-
-          #button-container {
-            height: 48px;
-            justify-content: flex-end;
-            padding: 0 4px;
-          }
-        }
-
         #lightbox-container {
           background-color: var(--grampsjs-lightbox-background-color);
           position: fixed;
@@ -84,13 +61,35 @@ class GrampsjsLightbox extends LitElement {
           overflow: hidden;
         }
 
+        /* Groups the description and its excerpt, so that the flip to a
+           column below splits them off from the buttons as a unit. */
+        #description-block {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          flex: 1;
+          min-width: 0;
+        }
+
+        /* Styled from here rather than wrapped in an element of our own, so
+           that an excerpt which is not supplied takes up no vertical space and
+           leaves the toolbar as a single line. */
+        ::slotted([slot='excerpt']) {
+          display: block;
+          font-size: 14px;
+          line-height: 19px;
+          padding: 0 20px;
+          opacity: 0.7;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
         #description-container {
           font-family: var(--grampsjs-heading-font-family);
           font-size: 22px;
           line-height: 30px;
           font-weight: 400;
-          flex: 1;
-          min-width: 0;
           padding: 0 20px;
           white-space: nowrap;
           overflow: hidden;
@@ -146,6 +145,39 @@ class GrampsjsLightbox extends LitElement {
           width: 100%;
           height: 100%;
           text-align: center;
+        }
+
+        /* Last in the sheet: media queries carry no extra specificity, so
+           these have to follow the rules they override. */
+        @media (max-width: 600px) {
+          :host {
+            --grampsjs-lightbox-toolbar-height: 96px;
+          }
+
+          #text-row {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          #description-container {
+            font-size: 15px;
+            /* Tighter than the desktop line box, so that a description and an
+               excerpt together still clear the button row below them. */
+            line-height: 22px;
+            padding: 4px 12px 0;
+          }
+
+          ::slotted([slot='excerpt']) {
+            font-size: 13px;
+            line-height: 17px;
+            padding: 0 12px;
+          }
+
+          #button-container {
+            height: 48px;
+            justify-content: flex-end;
+            padding: 0 4px;
+          }
         }
       `,
     ]
@@ -215,8 +247,11 @@ class GrampsjsLightbox extends LitElement {
         </div>
         <div id="text" tabindex="0">
           <div id="text-row">
-            <div id="description-container">
-              <slot name="description"></slot>
+            <div id="description-block">
+              <div id="description-container">
+                <slot name="description"></slot>
+              </div>
+              <slot name="excerpt"></slot>
             </div>
             <div id="button-container">
               <slot name="button"></slot>
