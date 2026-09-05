@@ -60,6 +60,9 @@ import '../views/GrampsjsViewNewTask.js'
 import '../views/GrampsjsViewNewBlogPost.js'
 import '../views/GrampsjsViewHelp.js'
 import '../views/GrampsjsViewTimeline.js'
+import '../views/GrampsjsViewEmbed.js'
+import '../views/GrampsjsViewCustomPage.js'
+import {EMBED_PAGE, getEmbeddedPages} from '../embeddedPages.js'
 
 class GrampsjsPages extends GrampsjsAppStateMixin(LitElement) {
   static get styles() {
@@ -421,6 +424,34 @@ class GrampsjsPages extends GrampsjsAppStateMixin(LitElement) {
         ?active=${this.appState.path.page === 'timeline'}
         .appState="${this.appState}"
       ></grampsjs-view-timeline>
+      ${getEmbeddedPages(this.appState.frontendConfig).map(page =>
+        this._renderEmbeddedPage(page)
+      )}
+    `
+  }
+
+  _renderEmbeddedPage(page) {
+    const active =
+      this.appState.path.page === EMBED_PAGE &&
+      this.appState.path.pageId === page.id
+    if (page.module) {
+      return html`
+        <grampsjs-view-custom-page
+          class="page"
+          ?active=${active}
+          .embeddedPage="${page}"
+          subPage="${this.appState.path.pageId2}"
+          .appState="${this.appState}"
+        ></grampsjs-view-custom-page>
+      `
+    }
+    return html`
+      <grampsjs-view-embed
+        class="page"
+        ?active=${active}
+        .embeddedPage="${page}"
+        .appState="${this.appState}"
+      ></grampsjs-view-embed>
     `
   }
 }
