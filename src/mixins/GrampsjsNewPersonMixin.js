@@ -33,7 +33,7 @@ export const GrampsjsNewPersonMixin = superClass =>
         ></grampsjs-form-name>
 
         <h4 class="label">${this._('Gender')}</h4>
-        <md-filled-select id="select-confidence" @change="${this.handleGender}">
+        <md-filled-select id="select-gender" @change="${this.handleGender}">
           ${Object.keys(this.gender).map(
             genderConst => html`
               <md-select-option
