@@ -153,7 +153,7 @@ Fire events with the `fireEvent(target, eventName, detail?)` helper from `util.j
 
 ## Runtime configuration
 
-`src/config.js` is excluded from the bundle and copied as-is to `dist/config.js`. Deployers can mount a replacement file on top in Docker to set `window.grampsjsConfig` options (e.g. custom API URL, OAuth provider configuration). The default file just sets `window.grampsjsConfig = {}`.
+`src/config.js` is excluded from the bundle and copied as-is to `dist/config.js`. Deployers can mount a replacement file on top in Docker to set `window.grampsjsConfig` options (e.g. `hideDNALink`, `loginRedirect`, map style URLs, `embeddedPages`). The default file sets `window.grampsjsConfig = {}` and its header comment documents every supported option — keep that comment up to date when adding an option, and read options via `appState.frontendConfig`.
 
 ## Code style
 
